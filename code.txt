@@ -1,53 +1,55 @@
 													
                
 1.	 Begin by dropping all the double from csv file.
-Load data and create Spark data frame
+	
+    Load data and create Spark data frame
 
-val sqlContext = new org.apache.spark.sql.SQLContext(sc)
+	val sqlContext = new org.apache.spark.sql.SQLContext(sc)
 
-val bankDf = spark.read.option("header","true").option("delimiter",";").csv("gs://hdpuserbucket/bankdata.csv")
+	val bankDf = spark.read.option("header","true").option("delimiter",";").csv("gs://hdpuserbucket/bankdata.csv")
 
-bankDf.registerTempTable("bankdata")
+	bankDf.registerTempTable("bankdata")
 
 
 2.	 Marketing success rate. (No. of people subscribed / total no. of entries)
 
-val totalentries = sqlContext.sql("select count(*) from bankdata")
+	val totalentries = sqlContext.sql("select count(*) from bankdata")
 
-val noofsubscribed = sqlContext.sql("select count(*) from bankdata where y='yes'")
+	val noofsubscribed = sqlContext.sql("select count(*) from bankdata where y='yes'")
 
-val Marketing_success_rate = noofsubscribed.head().getLong(0).toDouble /  totalentries.head().getLong(0).toDouble
- 2a.  val Marketing_failure_rate = 100 - Marketing_success_rate
+	val Marketing_success_rate = noofsubscribed.head().getLong(0).toDouble /  totalentries.head().getLong(0).toDouble
+
+2a.  	val Marketing_failure_rate = 100 - Marketing_success_rate
+ 
 3.	Maximun and Minimum and Mean 
 
-val min_max_avg_age = bankDf.agg(min(“age”), max(“age”),avg(“age”)).show
+ 	val min_max_avg_age = bankDf.agg(min(“age”), max(“age”),avg(“age”)).show
 
 4.	Average Balance and Median Balance
-val avg_balance = bankDf.agg(avg("balance")).show
-val median_balance = sqlContext.sql("select percentile(balance,0.5) from bankdata")
+    	val avg_balance = bankDf.agg(avg("balance")).show 
+	val median_balance = sqlContext.sql("select percentile(balance,0.5) from bankdata")
 
 5.	bankDf.groupBy("y").agg(avg("age")).show
-Yes, Age matters in marketing subscription for deposit.
+	Yes, Age matters in marketing subscription for deposit.
 
 6.	bankDf.filter($"y"==="yes").groupBy("marital").count.show
-
-Marketing subscription for deposit is high for people whose marital status 
-is married.
+	Marketing subscription for deposit is high for people whose marital status 
+	is married.
 
 7.	 sqlContext.sql("select age,marital,count(*) from bankdata where y='yes' group by marital,age").show
 
 8.	def ageToCategory = udf((age:Int) => {
 
-age match {
-case t if t < 30 => "Young"
-case t if t > 65 => "Old"
-case _ => "Mid Age"
-}}) 
+	age match {
+	case t if t < 30 => "Young"
+	case t if t > 65 => "Old"
+	case _ => "Mid Age"
+	}}) 
 
-val newbankDf = bankDf.withColumn("agecategory",agetocategory(bankDf("age")))
+	val newbankDf = bankDf.withColumn("agecategory",agetocategory(bankDf("age")))
 
-newbankDf.filter($"y"==="yes").groupBy("agecategory").count.show
-       Mid-Age people subscribe the most.
+	newbankDf.filter($"y"==="yes").groupBy("agecategory").count.show
+	       Mid-Age people subscribe the most.
 
 
 
